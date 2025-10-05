@@ -71,13 +71,6 @@ def plan_page():
         return redirect(url_for("login_page"))
     return render_template("plan.html")
 
-@app.route("/success", methods=["GET"])
-def success_page():
-    if "user_id" not in session:
-        flash("กรุณาเข้าสู่ระบบก่อน", "error")
-        return redirect(url_for("login_page"))
-    return render_template("success.html")
-
 @app.route("/user", methods=["GET"])
 def user_page():
     if "user_id" not in session:
@@ -94,8 +87,6 @@ def _signup_alias():  return redirect(url_for("signup_page"))
 def _dash_alias():    return redirect(url_for("dashboard"))
 @app.route("/plan.html")
 def _plan_alias():    return redirect(url_for("plan_page"))
-@app.route("/success.html")
-def _success_alias(): return redirect(url_for("success_page"))
 @app.route("/user.html")
 def _user_alias():    return redirect(url_for("user_page"))
 
