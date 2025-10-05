@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forgot password</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* เล็กน้อยสำหรับสถานะ inline */
+    .muted { margin-bottom: 12px; color:#64748b; }
+    .hint { font-size:13px; color:#6b7280; margin-top:8px; }
+    .small-row { display:flex; gap:8px; align-items:center; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1 class="title">ลืมรหัสผ่าน</h1>
+      <p class="muted">ใส่อีเมลที่คุณใช้สมัคร แล้วตั้งรหัสผ่านใหม่</p>
+
+      <!-- STEP 1: Request reset -->
+      <form id="requestForm" class="grid">
+        <label class="field">
+          <span class="label">Email</span>
+          <input class="input" type="email" id="email" placeholder="you@example.com" required />
+        </label>
+
+        <button class="btn primary" type="submit">Send reset link</button>
+
+        <p class="new-here">
+          Remembered? <a href="index.html" class="btn-ghost">กลับไปล็อกอิน</a>
+        </p>
+      </form>
+
+      <!-- STEP 2: Reset form (hidden until email found) -->
+      <form id="resetForm" class="grid hidden">
+        <p class="muted">พบบัญชีแล้ว — ตั้งรหัสผ่านใหม่</p>
+
+        <label class="field">
+          <span class="label">New password</span>
+          <input class="input" type="password" id="newPassword" placeholder="••••••••" minlength="8" required />
+        </label>
+
+        <label class="field">
+          <span class="label">Confirm password</span>
+          <input class="input" type="password" id="confirmPassword" placeholder="••••••••" minlength="8" required />
+          <small id="matchMsg" style="font-size:13px;color:#ef4444;display:none;">รหัสผ่านไม่ตรงกัน</small>
+        </label>
+
+        <div class="small-row">
+          <button class="btn primary" type="submit">Set new password</button>
+          <button id="cancelReset" class="btn" type="button">Cancel</button>
+        </div>
+      </form>
+
+      <div id="info" class="hint" style="margin-top:14px;"></div>
+    </section>
+  </main>
+
+  <script>
+    // Elements
+    const requestForm = document.getElementById("requestForm");
+    const resetForm = document.getElementById("resetForm");
+    const emailInput = document.getElementById("email");
+    const info = document.getElementById("info");
+    const cancelReset = document.getElementById("cancelReset");
+    const newPassword = document.getElementById("newPassword");
+    const confirmPassword = document.getElementById("confirmPassword");
+    const matchMsg = document.getElementById("matchMsg");
+
+    let targetEmail = null; // เก็บ email ที่กำลังรีเซ็ต
+
+    // STEP 1: Request reset (mock)
+    requestForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      info.textContent = "";
+      const email = emailInput.value.trim().toLowerCase();
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const user = users.find(u => u.email && u.email.toLowerCase() === email);
+
+      if (!user) {
+        info.style.color = "#ef4444";
+        info.textContent = "ไม่พบอีเมลนี้ในระบบ";
+        return;
+      }
+
+      // Mock sending — แทนที่จะส่งอีเมลจริง เราแสดง form reset ทันที
+      targetEmail = email;
+      info.style.color = "#16a34a";
+      info.textContent = "ส่งลิงก์ตั้งรหัสผ่านให้เรียบร้อย (จำลอง) — กรอกรหัสผ่านใหม่ด้านล่าง";
+      
+      // แสดงฟอร์ม reset
+      requestForm.classList.add("hidden");
+      resetForm.classList.remove("hidden");
+      newPassword.focus();
+    });
+
+    // ตรวจสอบการตรงกันของรหัสผ่านขณะพิมพ์
+    confirmPassword.addEventListener("input", () => {
+      if (confirmPassword.value !== newPassword.value) {
+        matchMsg.style.display = "block";
+      } else {
+        matchMsg.style.display = "none";
+      }
+    });
+
+    // STEP 2: Apply new password
+    resetForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      matchMsg.style.display = "none";
+
+      if (newPassword.value.length < 8) {
+        info.style.color = "#ef4444";
+        info.textContent = "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร";
+        return;
+      }
+      if (newPassword.value !== confirmPassword.value) {
+        matchMsg.style.display = "block";
+        info.style.color = "#ef4444";
+        info.textContent = "กรุณาตรวจสอบรหัสผ่านอีกครั้ง";
+        return;
+      }
+      if (!targetEmail) {
+        info.style.color = "#ef4444";
+        info.textContent = "เกิดข้อผิดพลาด — กรุณาลองใหม่";
+        return;
+      }
+
+      // อัปเดตรหัสผ่านใน localStorage (mock)
+      const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const idx = users.findIndex(u => u.email && u.email.toLowerCase() === targetEmail);
+      if (idx === -1) {
+        info.style.color = "#ef4444";
+        info.textContent = "ไม่พบบัญชี (เกิดข้อผิดพลาด)";
+        return;
+      }
+      users[idx].password = newPassword.value;
+      localStorage.setItem("users", JSON.stringify(users));
+
+      // เคลียร์และแจ้งผล
+      info.style.color = "#16a34a";
+      info.textContent = "ตั้งรหัสผ่านใหม่เรียบร้อยแล้ว — กลับไปล็อกอินได้เลย";
+      setTimeout(() => {
+        window.location.href = "index.html";
+      }, 1200);
+    });
+
+    // Cancel reset -> คืนสเต็ปแรก
+    cancelReset.addEventListener("click", () => {
+      resetForm.classList.add("hidden");
+      requestForm.classList.remove("hidden");
+      info.textContent = "";
+      emailInput.focus();
+      targetEmail = null;
+      newPassword.value = "";
+      confirmPassword.value = "";
+      matchMsg.style.display = "none";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus Bird · Serious Focus Mode</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='focus.css') }}">
+  <!-- MediaPipe deps -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script defer src="focus.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hud">
+      <div class="brand">
+        🐦 Focus Bird <span class="mode">Serious Focus Mode</span>
+      </div>
+      <div class="panel-right">
+        <div class="pill">🌱 <span id="seeds">0</span></div>
+        <div class="pill">🔥 Streak <span id="streak">0</span>d</div>
+        <button id="backBtn" class="btn ghost">Back</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Timer + Camera + Bird -->
+      <section class="card">
+        <div class="head-row">
+          <h2>⏱ Focus Timer</h2>
+          <div class="mini">
+            Focus score: <strong id="focusScore">0%</strong>
+            &nbsp;•&nbsp; Violations: <strong id="violations">0</strong>
+          </div>
+        </div>
+
+        <div class="timer">
+          <div id="display" class="display">00:00:00</div>
+          <div class="actions">
+            <button id="startBtn" class="btn ok">START</button>
+            <button id="pauseBtn" class="btn warn">PAUSE</button>
+            <button id="stopBtn"  class="btn bad">STOP</button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="video-wrap">
+            <video id="cam" autoplay playsinline muted></video>
+            <canvas id="overlay"></canvas>
+            <div class="status-badge" id="focusBadge">Analyzing…</div>
+          </div>
+          <div class="pet">
+            <div id="bird" class="bird">🐦</div>
+            <div id="mood" class="mood">พร้อมเริ่มเมื่อไหร่ก็กด START</div>
+            <div class="bar-wrap">
+              <div id="goalBar" class="bar"></div>
+            </div>
+            <div class="hint">Progress toward daily goal</div>
+          </div>
+        </div>
+
+        <details class="opt">
+          <summary>Advanced options</summary>
+          <div class="opt-grid">
+            <label>Daily goal (min)
+              <input type="number" id="goal" min="10" value="120" />
+            </label>
+            <label>Grace (sec)
+              <input type="number" id="graceSec" min="1" value="3" />
+            </label>
+            <label>Auto-pause
+              <select id="autoPause">
+                <option value="on" selected>On</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label>Overlay
+              <select id="drawOverlay">
+                <option value="on" selected>On</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+          </div>
+          <div class="hint">หมายเหตุ: ประมวลผลบนเครื่อง ไม่อัพโหลดวิดีโอ</div>
+        </details>
+      </section>
+
+      <!-- RIGHT: Log + Calibration -->
+      <section class="card">
+        <div class="head-row">
+          <h2>📝 Sessions</h2>
+          <button id="clearLog" class="btn ghost tiny">Clear</button>
+        </div>
+        <div id="log" class="log"></div>
+
+        <div class="calib">
+          <h3>🎯 Calibration</h3>
+          <p class="muted">นั่งปกติ มองจอในระยะใช้งานจริง แล้วกดปุ่มด้านล่าง</p>
+          <div class="actions">
+            <button id="calibrateBtn" class="btn primary">Calibrate Gaze</button>
+            <button id="resetCalibBtn" class="btn ghost">Reset</button>
+          </div>
+          <div id="calibInfo" class="hint">ยังไม่ได้คาลิเบรต</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="{{ url_for('serve_js', filename='focus.js') }}" defer></script>
+</body>
+</html>

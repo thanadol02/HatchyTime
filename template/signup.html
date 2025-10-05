@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Signup</title>
+  <link rel="stylesheet" href="/CSS/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <section class="panel">
+      <h1 class="title">Create an account</h1>
+      <p class="muted">Join us to get started</p>
+
+     <form id="signupForm" class="grid" action="/signup" method="post">
+  <label class="field">
+    <span class="label">Username</span>
+    <input class="input" type="text" name="username" placeholder="Username" required />
+  </label>
+
+  <label class="field">
+    <span class="label">Email</span>
+    <input class="input" type="email" name="email" placeholder="you@example.com" required />
+  </label>
+
+  <label class="field">
+    <span class="label">Password</span>
+    <input class="input" type="password" name="password" placeholder="••••••••" minlength="8" required />
+  </label>
+
+  <label class="field">
+    <span class="label">Confirm password</span>
+    <input class="input" type="password" name="confirm" placeholder="••••••••" minlength="8" required />
+  </label>
+
+  <button class="btn primary" type="submit" >Create account</button>
+
+  <p class="new-here">
+    Already have an account?
+    <a href="/login" class="btn-ghost">Sign in</a>
+  </p>
+</form>
+
+      
+    </section>
+  </main>
+</body>
+</html>

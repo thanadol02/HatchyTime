@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>StudyBoard — Minimal Focus Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    // ตั้งธีมก่อนโหลด CSS แบบเดียวกับ plan (ใช้คีย์ sb_theme และ default ตามระบบ)
+    (function(){
+      const KEY = "sb_theme";
+      try {
+        var saved = localStorage.getItem(KEY) || (matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.setAttribute('data-theme', saved);
+        localStorage.setItem(KEY, saved);
+      } catch (e) {}
+    })();
+  </script>
+  <!-- CSS จาก static_folder="CSS" -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledas.css') }}">
+</head>
+
+<body class="has-sidebar" data-page="dashboard">
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar" aria-label="แถบเมนูด้านข้าง">
+    <div class="sidebar-inner">
+      <div class="sidebar-top">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+        <div style="flex:1"></div>
+        <button class="menu-btn theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch color theme">
+          <span class="icon" id="themeIcon">🌓</span>
+          <span class="label" id="themeLabel">สลับธีม</span>
+        </button>
+      </div>
+
+      <div class="sidebar-card" id="sidebarProfile" title="โปรไฟล์">
+        <div class="sidebar-profile">
+          <img src="{{ url_for('static', filename='โปร.jpg') }}" class="avatar" alt="Profile">
+          <div>
+            <div class="profile-name">My Profile</div>
+            <div class="profile-sub">พร้อมลุยวันนี้ ✨</div>
+          </div>
+          <!-- เพิ่มปุ่ม Logout -->
+          <button class="icon-btn logout-icon" id="logoutBtn" title="ออกจากระบบ" aria-label="Logout">🚪</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">แผนงาน</div>
+      <ul class="menu">
+        <li class="menu-item">
+          <button class="menu-btn is-active" data-href="{{ url_for('dashboard') }}">
+            <span class="icon">🏠</span><span class="label">หน้าแรก</span>
+          </button>
+        </li>
+        <li class="menu-item">
+          <button class="menu-btn" data-href="{{ url_for('plan_page') }}">
+            <span class="icon">🧾</span><span class="label">เพิ่มและดูแผน</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ========== Main ========== -->
+  <main class="main">
+    <header class="topbar">
+      <h1>Minimal Focus Dashboard</h1>
+    </header>
+
+    <!-- ========== Main + Right Sidebar Layout ========== -->
+    <section class="dashboard-layout" aria-label="Dashboard main">
+
+      <!-- LEFT: Upload + Reading Mode -->
+      <div>
+        <article class="card" style="max-width: 100%; margin: 0 auto; text-align:center; padding: 20px;">
+          <div class="card-head"><h2>📚 โหมดอ่านหนังสือ</h2></div>
+
+          <form method="post" action="{{ url_for('dashboard') }}" enctype="multipart/form-data" style="margin: 20px auto; max-width: 520px;">
+            <input type="file" name="file" class="form-control mb-2" />
+            <div class="stack" style="gap: 8px; align-items: center;">
+              <button type="submit" class="btn success">อัพโหลด</button>
+              <small class="hint">รองรับ .txt, .csv, .xls, .xlsx, .pdf</small>
+            </div>
+          </form>
+
+          {% if download_url or pdf_url %}
+          <div class="opt" style="display:flex; gap:8px; align-items:center; justify-content:flex-end; margin-top:8px;">
+            <label for="fontSizeSel">ขนาดตัวอักษร:</label>
+            <select id="fontSizeSel">
+              <option value="18px">เล็ก</option>
+              <option value="20px" selected>กลาง</option>
+              <option value="24px">ใหญ่</option>
+              <option value="28px">ใหญ่มาก</option>
+            </select>
+            {% if download_url %}
+              <a class="btn tiny" href="{{ download_url }}">⬇️ ดาวน์โหลดข้อความ</a>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          {% if reading_text %}
+            <div id="readingBox" class="reading-box" style="text-align:left; margin-top:12px;">
+              <pre id="readingText" class="reading-pre">{{ reading_text }}</pre>
+            </div>
+          {% endif %}
+
+          {% if pdf_url %}
+            <h4 style="margin-top:16px; text-align:left;">📄 ตัวอย่าง PDF</h4>
+            <div style="border:1px solid var(--soft, #eef2f7); border-radius:12px; overflow:hidden;">
+              <iframe src="{{ pdf_url }}" style="width:100%; height:600px; border:0;" title="PDF preview"></iframe>
+            </div>
+          {% endif %}
+        </article>
+      </div>
+
+      <!-- RIGHT: Focus & widgets as sidebar -->
+      <aside class="right-stick">
+        <article class="card">
+          <div class="card-head"><h2>🦜 Focus Mode</h2></div>
+
+          <div class="opt" id="modeSwitch">
+            <label style="min-width: 92px;">โหมด:</label>
+            <div class="seg">
+              <button type="button" class="btn tiny is-active" data-mode="timer" id="modeTimerBtn">จับเวลาปกติ</button>
+              <button type="button" class="btn tiny" data-mode="pomo" id="modePomoBtn">Pomodoro</button>
+            </div>
+            <select id="pomoPreset" class="hidden">
+              <option value="25-5-15-4">25 โฟกัส / 5 พักสั้น / พักยาว 15 ทุก 4 รอบ</option>
+              <option value="50-10-20-3">50 โฟกัส / 10 พักสั้น / พักยาว 20 ทุก 3 รอบ</option>
+            </select>
+            <span class="hint" id="modeHint">โหมดจับเวลาปกติ</span>
+          </div>
+
+          <div class="opt">
+            <label for="timeSelect">เลือกเวลา:</label>
+            <select id="timeSelect">
+              <option value="30">30 นาที</option>
+              <option value="60">1 ชั่วโมง</option>
+              <option value="90">1 ชั่วโมง 30 นาที</option>
+              <option value="120">2 ชั่วโมง</option>
+              <option value="custom">➕ เพิ่มเวลาเอง...</option>
+            </select>
+          </div>
+
+          <div class="opt" id="pomoControls">
+            <label><input type="checkbox" id="pomoEnable" /> ใช้โหมด Pomodoro</label>
+            <button class="btn tiny" type="button" id="pomoSettings">⚙️ ตั้งค่า</button>
+            <span class="hint" id="pomoStatus">พร้อมเริ่ม: โฟกัส 25 นาที</span>
+          </div>
+
+          <div class="opt">
+            <label for="subjectSelect">เลือกวิชา:</label>
+            <select id="subjectSelect"></select>
+            <input type="text" id="newSubject" placeholder="เพิ่มวิชาใหม่..." />
+            <button class="btn tiny success" type="button" id="addSubjectBtn">➕ เพิ่ม</button>
+          </div>
+
+          <div class="timer">
+            <div id="display" class="timer-display" aria-live="polite">00:00</div>
+            <div class="timer-actions">
+              <button class="btn success" type="button" id="startBtn">▶️ Start</button>
+              <button class="btn warning" type="button" id="pauseBtn">⏸️ Pause</button>
+              <button class="btn danger" type="button" id="stopBtn">⏹️ Stop</button>
+            </div>
+          </div>
+
+          <div class="quote-box" id="quote">“Focus is the key to productivity. Stay committed!” 💪</div>
+
+          <div class="stage">
+            <div class="video-wrap" aria-label="Camera preview">
+              <video id="cameraFeed" autoplay playsinline muted></video>
+              <div class="status-badge" id="eyeStatus">👀 รอจับสายตา...</div>
+            </div>
+            <div class="pet">
+              <div class="bird" id="bird">🦜</div>
+              <div class="mood" id="mood">พร้อมเริ่มเมื่อไหร่ก็กด START</div>
+              <div class="bar-wrap"><div class="bar" id="progressBar"></div></div>
+              <div class="hint">Progress toward daily goal (2h)</div>
+            </div>
+          </div>
+
+          <div class="log">
+            <h3>📊 เวลาสะสมต่อวิชา</h3>
+            <ul id="subjectLog"></ul>
+          </div>
+        </article>
+      </aside>
+    </section>
+  </main>
+
+  <!-- ========== Scripts ========== -->
+  <script>
+    // Toggle Sidebar — ให้เหมือน plan (ใช้แค่ body.sidebar-collapsed)
+    (function(){
+      const toggleBtn = document.getElementById('sidebarToggle');
+      toggleBtn?.addEventListener('click', () => {
+        document.body.classList.toggle('sidebar-collapsed');
+      });
+    })();
+
+    // ทำให้คลิกโปรไฟล์แล้วไปหน้าโปรไฟล์จริงผ่าน Flask route
+    (function(){
+      const card = document.getElementById('sidebarProfile');
+      card?.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.href = "{{ url_for('user_page') }}";
+      });
+    })();
+
+    // เพิ่ม Logout ใน Sidebar (เก็บธีม sb_theme แล้วค่อยล้าง storage)
+    (function () {
+      const btn = document.getElementById("logoutBtn");
+      btn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const theme = localStorage.getItem("sb_theme") || document.documentElement.getAttribute("data-theme");
+          localStorage.clear(); sessionStorage.clear();
+          if (theme) localStorage.setItem("sb_theme", theme);
+        } catch (e) {}
+        window.location.href = "{{ url_for('login_page') }}";
+      });
+    })();
+
+    // Theme toggle — เหมือน plan.html ทุกประการ
+    (function(){
+      const THEME_KEY = "sb_theme";
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon   = document.getElementById("themeIcon");
+      const themeLabel  = document.getElementById("themeLabel");
+
+      const preferred = localStorage.getItem(THEME_KEY)
+        || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+
+      const apply = (t) => {
+        document.documentElement.setAttribute("data-theme", t);
+        const isDark = t === "dark";
+        themeToggle?.setAttribute("aria-pressed", String(isDark));
+        if (themeIcon)  themeIcon.textContent  = isDark ? "🌙" : "🌞";
+        if (themeLabel) themeLabel.textContent = isDark ? "ธีมสว่าง" : "สลับธีม";
+      };
+
+      apply(preferred);
+
+      themeToggle?.addEventListener("click", () => {
+        const cur  = document.documentElement.getAttribute("data-theme") || "light";
+        const next = (cur === "light") ? "dark" : "light";
+        localStorage.setItem(THEME_KEY, next);
+        apply(next);
+      });
+    })();
+
+    // ตัวเลือกขนาดฟอนต์ในโหมดอ่านหนังสือ
+    (function(){
+      const sel = document.getElementById('fontSizeSel');
+      const txt = document.getElementById('readingText');
+      if (sel && txt) {
+        sel.addEventListener('change', () => {
+          txt.style.fontSize = sel.value;
+        });
+      }
+    })();
+
+    // Sidebar: ไปหน้าเมื่อกดปุ่ม + ทำ active อัตโนมัติ (normalize path)
+    (function(){
+      document.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.menu-btn[data-href]');
+        if(!btn) return;
+        const href = btn.getAttribute('data-href');
+        if (href) window.location.href = href;
+      });
+
+      function normPath(p){
+        try { return new URL(p, location.origin).pathname.replace(/\/+$/,''); }
+        catch { return String(p||'').replace(/^[^/]*(?=\/)/,'').replace(/\/+$/,''); }
+      }
+      const current = normPath(location.pathname);
+      document.querySelectorAll('.menu-btn[data-href]').forEach(btn=>{
+        const href = btn.getAttribute('data-href') || '';
+        btn.classList.toggle('active', normPath(href) === current);
+      });
+    })();
+  </script>
+
+  <!-- Libs แล้วค่อยไฟล์ของเรา -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- ✅ ใส่ MediaPipe ก่อน dashboard.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <!-- ✅ dashboard.js โหลดทีเดียวหลัง MediaPipe -->
+  <script src="{{ url_for('serve_js', filename='dashboard.js') }}" defer></script>
+</body>
+</html>
+</html>

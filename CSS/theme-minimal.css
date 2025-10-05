@@ -1,0 +1,101 @@
+/* Focus Bird — Minimal Theme */
+:root {
+    /* Base neutrals */
+    --bg:        #f6f7f8;   /* พื้นหลัง */
+    --card:      #ffffff;   /* กล่อง/การ์ด */
+    --line:      #e6e7ea;   /* เส้นแบ่งบางๆ */
+    --ink:       #0f172a;   /* ตัวอักษรหลัก (เกือบดำ) */
+    --muted:     #6b7280;   /* ตัวอักษรรอง */
+  
+    /* Accent เดียว (จงใช้ให้น้อย) */
+    --accent-100:#eef2ff;
+    --accent-300:#c7d2fe;
+    --accent-500:#6366f1;   /* อินเทอแอคทีฟหลัก: ปุ่ม/ลิงก์ */
+    --accent-600:#585ae6;
+    --accent-700:#4f51d6;
+  
+    /* สถานะ (โทนอ่อน เข้ากับมินิมอล) */
+    --ok:    #16a34a;
+    --warn:  #eab308;
+    --danger:#ef4444;
+  
+    /* รูปทรง/เงา */
+    --radius: 14px;
+    --shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  
+  /* Minimal Dark (สลับด้วย data-theme="dark") */
+  [data-theme="dark"] {
+    --bg:    #0f172a;
+    --card:  #111827;
+    --line:  #1f2937;
+    --ink:   #e5e7eb;
+    --muted: #94a3b8;
+  
+    --accent-100:#1e293b;
+    --accent-300:#334155;
+    --accent-500:#818cf8;
+    --accent-600:#747cf5;
+    --accent-700:#6366f1;
+  
+    --shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  
+  /* ==== Base Elements (ใช้ซ้ำทุกหน้า) ==== */
+  html, body { background: var(--bg); color: var(--ink); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-300); }
+  
+  /* ปุ่ม */
+  .btn { border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+  .btn.primary { background: var(--accent-500); color: #fff; }
+  .btn.primary:hover { background: var(--accent-600); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+  .btn.success { background: var(--ok); color: #fff; }
+  .btn.warning { background: var(--warn); color: #111; }
+  .btn.danger  { background: var(--danger); color: #fff; }
+  
+  /* ลิงก์ */
+  a, .link { color: var(--accent-600); text-decoration: none; }
+  a:hover, .link:hover { color: var(--accent-700); }
+  
+  /* KPI / Stat — ใช้เส้นบางด้านบนแทนสีลูกกวาด */
+  .stat, .kpi { position: relative; }
+  .stat::before, .kpi::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--accent-500);
+    opacity: .65;
+  }
+  
+  /* Segmented / Tabs */
+  .seg-btn, .tab {
+    background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  .seg-btn.is-active, .tab.active { background: var(--accent-500); color: #fff; border-color: var(--accent-500); }
+  
+  /* Progress bars */
+  .bar-wrap { height: 10px; background: var(--accent-100); border-radius: 999px; overflow: hidden; }
+  .bar { height: 100%; width: 0; background: var(--accent-500); }
+  
+  /* Calendar highlight */
+  .cell.today { background: var(--accent-500); color: #fff; border-radius: 50%; }
+  .cell.has   { background: var(--accent-100); }
+  
+  /* หัวข้อ */
+  h1, h2 { color: var(--ink); }
+  h2 { font-size: 18px; font-weight: 700; }
+  

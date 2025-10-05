@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="th" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <title>ที่วางแผนไว้ — StudyBoard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    /* ================= THEME ================= */
+:root{
+  /* Sidebar */
+  --sb-bg:#fff; --sb-surface:#fff; --sb-soft:#f5f7fb;
+  --sb-text:#1f2650; --sb-muted:#7b86a2; --sb-border:#eef1f6;
+  --sb-accent:#6366f1; --sb-accent-ink:#fff; --sb-shadow:0 12px 30px rgba(17,38,146,.08);
+
+  /* Main */
+  --bg:#f7f8fb; --text:#182230; --muted:#667084;
+  --card:#fff; --card-2:#f4f6fb; --border:#e5e7ef;
+  --accent:#3b82f6; --accent-ink:#fff;
+  --ok:#22c55e; --warn:#f59e0b; --danger:#ef4444;
+  --chip:#eef2fb; --shadow:0 10px 28px rgba(18,38,63,.08);
+
+  --r-sm:12px; --r-md:16px; --r-lg:18px;
+}
+html[data-theme="dark"]{
+  --sb-bg:#0b1220; --sb-surface:#0f172a; --sb-soft:#0b1220;
+  --sb-text:#e8edf6; --sb-muted:#9aa5b1; --sb-border:#1d2a44;
+  --sb-accent:#6366f1; --sb-accent-ink:#fff; --sb-shadow:0 12px 30px rgba(0,0,0,.35);
+
+  --bg:#0b1220; --text:#e8edf6; --muted:#9aa5b1;
+  --card:#0f172a; --card-2:#111a30; --border:#1d2a44;
+  --accent:#60a5fa; --accent-ink:#0b1220;
+  --chip:#0c1324; --shadow:0 12px 30px rgba(0,0,0,.35);
+}
+
+/* ================ BASE & LAYOUT ================ */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans Thai","Noto Sans",Roboto,Arial,sans-serif;
+  letter-spacing:.2px;
+}
+.has-sidebar{
+  display:grid; grid-template-columns:280px minmax(0,1fr);
+  min-height:100vh; background:var(--sb-soft);
+}
+@media (max-width:860px){ .has-sidebar{grid-template-columns:84px 1fr} }
+
+/* ================= SIDEBAR ================= */
+.sidebar{
+  position:sticky; top:0; height:100dvh; overflow:auto;
+  padding:14px; background:var(--sb-bg); border-right:1px solid var(--sb-border);
+}
+.sidebar-inner{display:grid; gap:14px}
+.sidebar-top{display:flex; align-items:center; gap:10px}
+.sidebar-toggle{
+  width:36px; height:36px; border-radius:10px; cursor:pointer;
+  border:1px solid var(--sb-border); background:#fff; display:grid; place-items:center;
+}
+html[data-theme="dark"] .sidebar-toggle{background:#0f172a; color:var(--sb-text)}
+
+.sidebar-card{
+  background:var(--sb-surface); border:1px solid var(--sb-border);
+  border-radius:var(--r-lg); padding:14px; box-shadow:var(--sb-shadow);
+}
+.sidebar-profile{display:flex; gap:12px; align-items:center}
+.sidebar-profile .avatar{width:44px; height:44px; border-radius:12px; object-fit:cover; background:#e9eefc}
+html[data-theme="dark"] 
+.sidebar-profile .avatar{background:#223}
+.profile-name{font-weight:700; color:var(--sb-text)}
+.profile-sub{font-size:12px; color:var(--sb-muted)}
+
+.sidebar-section-title{
+  padding:8px 8px 6px; font-size:13px; font-weight:700; color:var(--sb-muted);
+  border-top:1px solid var(--sb-border); margin-top:8px;
+}
+
+/* ===== Menu (link style + purple active) ===== */
+.menu{list-style:none; margin:0; padding:6px 8px}
+.menu-item + .menu-item{margin-top:8px}
+
+/* ปกติ = ลิงก์มีเส้นใต้ */
+.menu .menu-btn{
+  width:100%; display:flex; align-items:center; gap:10px;
+  height:40px; padding:8px 12px; border-radius:14px;
+  background:transparent; border:none; cursor:pointer;
+  font-weight:700; color:#55607a; text-decoration:underline; transition:color .15s;
+}
+.menu .menu-btn .icon{width:20px; display:inline-grid; place-items:center}
+.menu .menu-btn:hover{color:#394360}
+
+/* Active = เม็ดม่วงโค้งมน (ทั้ง .active/.is-active + data-page) */
+.menu .menu-btn.active,
+.menu .menu-btn.is-active,
+body[data-page="dashboard"] .menu .menu-btn[data-href="dashboard.html"],
+body[data-page="plan"]      .menu .menu-btn[data-href="plan.html"],
+body[data-page="success"]   .menu .menu-btn[data-href="success.html"]{
+  background:var(--sb-accent); color:var(--sb-accent-ink);
+  text-decoration:none; box-shadow:0 10px 24px rgba(99,102,241,.25);
+}
+
+/* ปุ่มการ์ด “เพิ่มแผนงาน” */
+.menu-item.add .menu-btn,
+.menu .menu-btn.btn-card{
+  background:#fff; border:1px solid var(--sb-border); color:#0f1a3a;
+  text-decoration:none; box-shadow:var(--sb-shadow); height:44px; border-radius:16px;
+}
+.menu-item.add .menu-btn:hover,
+.menu .menu-btn.btn-card:hover{ transform:translateY(-1px); border-color:rgba(99,102,241,.35) }
+
+@media (max-width:860px){
+  .menu .menu-btn .label, .profile-name, .profile-sub{display:none}
+  .sidebar-card{padding:10px}
+  .sidebar-profile .avatar{border-radius:50%}
+}
+
+/* ================= MAIN ================= */
+.main{padding:18px 22px}
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px}
+.topbar h1{font-size:28px; line-height:1.25; margin:0}
+.container{max-width:1120px; margin:0 auto; display:grid; gap:14px}
+
+/* Card & toolbar */
+.card{
+  background:linear-gradient(180deg,var(--card),var(--card-2));
+  border:1px solid var(--border); border-radius:18px; padding:14px; box-shadow:var(--shadow);
+}
+.toolbar{display:grid; grid-template-columns:1fr 210px 220px 210px auto; gap:10px; align-items:center}
+@media (max-width:980px){ .toolbar{grid-template-columns:1fr 1fr; gap:8px} }
+
+/* Inputs */
+input[type="search"],input[type="text"],input[type="date"],select,textarea{
+  width:100%; height:42px; padding:10px 12px; border-radius:12px;
+  border:1px solid var(--border); background:rgba(255,255,255,.7); color:var(--text);
+  transition:border-color .12s, box-shadow .12s, background .12s;
+}
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] input[type="text"],
+html[data-theme="dark"] input[type="date"],
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{ background:rgba(255,255,255,.04) }
+textarea{height:88px; resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+input:focus,select:focus,textarea:focus{
+  border-color:rgba(99,102,241,.55); box-shadow:0 0 0 4px rgba(99,102,241,.15);
+  background:rgba(255,255,255,.95);
+}
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] textarea:focus{ background:rgba(255,255,255,.06) }
+
+/* Buttons */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  height:42px; padding:10px 16px; border-radius:999px;
+  border:1px solid var(--border); background:transparent; color:var(--text);
+  cursor:pointer; transition:transform .06s, box-shadow .12s, background .12s, border-color .12s;
+}
+.btn:hover{ transform:translateY(-1px); box-shadow:0 10px 20px rgba(0,0,0,.12) }
+.btn.tiny{height:36px; padding:8px 12px}
+.btn.success{background:var(--ok); color:#08121f; border-color:transparent}
+.btn.warn{background:var(--warn); color:#0b1220; border-color:transparent}
+.btn.danger{background:var(--danger); color:#fff; border-color:transparent}
+.btn-group{display:flex; gap:8px}
+
+/* Add form grid */
+.grid-add{
+  display:grid; grid-template-columns:1.2fr 220px 190px 1fr auto; gap:10px; align-items:start;
+}
+.grid-add textarea{grid-column:1 / -1}
+@media (max-width:980px){
+  .grid-add{grid-template-columns:1fr 1fr; gap:8px}
+  .grid-add button{grid-column:1 / -1}
+}
+
+/* Stats chip */
+.stat{display:flex; gap:10px; flex-wrap:wrap}
+.chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px; background:var(--chip);
+  border:1px solid var(--border); font-weight:600; color:var(--text);
+}
+
+/* Reading list */
+.plan-list{list-style:none; margin:0; padding:0}
+.plan-item{
+  display:grid; grid-template-columns:1fr auto; gap:12px;
+  padding:12px; border:1px solid var(--border); border-radius:14px;
+  background:rgba(255,255,255,.7); margin-bottom:10px;
+}
+html[data-theme="dark"] .plan-item{ background:rgba(255,255,255,.02) }
+.plan-item.done{ opacity:.7 }
+.row1{display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center}
+.row2{margin-top:6px; color:var(--muted)}
+.inline-edit{border-bottom:1px dashed transparent; cursor:text}
+.inline-edit:hover{border-bottom-color:var(--border)}
+.tag{
+  display:inline-flex; align-items:center; gap:6px; padding:6px 10px;
+  border:1px solid var(--border); border-radius:999px; background:var(--chip);
+  font-size:.925rem;
+}
+.tag.prio-สูง{background:rgba(245,158,11,.12)}
+.tag.prio-ด่วนมาก{background:rgba(239,68,68,.14)}
+.plan-actions{display:flex; gap:8px; align-items:center}
+.plan-actions .btn{min-width:110px}
+
+/* Empty & Scrollbar */
+.empty{color:var(--muted); padding:12px 0; text-align:center}
+*::-webkit-scrollbar{height:10px;width:10px}
+*::-webkit-scrollbar-thumb{background:#cfd6ec;border-radius:999px}
+html[data-theme="dark"] *::-webkit-scrollbar-thumb{background:#2a3a59}
+
+/* Theme toggle — match dashboard style */
+.theme-toggle{
+  background: var(--sb-surface);
+  border: 1px solid var(--sb-border);
+  padding: 10px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--sb-shadow);
+  font-size: 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform .2s, box-shadow .3s;
+}
+.theme-toggle:hover{ transform: translateY(-1px); }
+.theme-toggle:active{ transform: translateY(0); }
+.theme-toggle:focus-visible{ outline: 2px solid var(--sb-accent); outline-offset: 2px; }
+.sidebar .theme-toggle{ justify-content: flex-start; }
+
+  </style>
+</head>
+
+<body class="has-sidebar" data-page="plan">
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" aria-label="แถบเมนูด้านข้าง">
+    <div class="sidebar-inner">
+      <div class="sidebar-top">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+        <div style="flex:1"></div>
+        <button class="menu-btn theme-toggle" id="themeToggle" type="button" aria-pressed="false" aria-label="Switch color theme">
+          <span class="icon" id="themeIcon">🌓</span>
+          <span class="label" id="themeLabel">สลับธีม</span>
+        </button>
+      </div>
+
+      <div class="sidebar-card" id="sidebarProfile" title="โปรไฟล์">
+        <div class="sidebar-profile">
+          <img src="โปร.jpg" class="avatar" alt="Profile">
+          <div>
+            <div class="profile-name">My Profile</div>
+            <div class="profile-sub">พร้อมลุยอ่าน! ✨</div>
+          </div>
+          <!-- เพิ่มปุ่ม Logout -->
+          <button class="icon-btn logout-icon" id="logoutBtn" title="ออกจากระบบ" aria-label="Logout" style="width:32px;height:32px;border-radius:8px;background:transparent;">🚪</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section-title">แผนงาน</div>
+      <ul class="menu">
+        <li class="menu-item">
+          <button class="menu-btn" data-href="dashboard.html">
+            <span class="icon">🏠</span><span class="label">หน้าแรก</span>
+          </button>
+        </li>
+
+        <!-- หน้านี้คือ plan.html → ใส่ active ไว้ตรงปุ่มนี้ด้วย -->
+        <li class="menu-item">
+          <button class="menu-btn is-active" data-href="plan.html">
+            <span class="icon">🧾</span><span class="label">เพิ่มและดูแผน</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <header class="topbar">
+      <h1>🧾 ที่วางแผนไว้</h1>
+    </header>
+
+    <div class="container">
+      <!-- Toolbar -->
+      <section class="card">
+        <div class="toolbar">
+          <input type="search" id="q" placeholder="🔎 ค้นหาชื่อเรื่อง/โน้ต/วิชา…"/>
+          <select id="fPriority"><option value="">กรอง: ทุกความสำคัญ</option><option>ปกติ</option><option>สูง</option><option>ด่วนมาก</option></select>
+          <input type="text" id="fSubject" placeholder="กรอง: วิชา (เช่น ฟิสิกส์)"/>
+          <select id="sortBy">
+            <option value="date-asc">📅 วันที่ (เก่า→ใหม่)</option>
+            <option value="date-desc">📅 วันที่ (ใหม่→เก่า)</option>
+            <option value="prio-desc">⭐ ความสำคัญ (ด่วนมากก่อน)</option>
+            <option value="title-asc">🔤 ชื่อเรื่อง (ก-ฮ)</option>
+          </select>
+          <div class="btn-group">
+            <button class="btn tiny" id="clearFilters">🧹 ล้างตัวกรอง</button>
+            <button class="btn warn tiny" id="exportBtn">📤 Export</button>
+            <label class="btn tiny" for="importFile">📥 Import</label>
+            <input type="file" id="importFile" accept=".json,application/json" style="display:none"/>
+          </div>
+        </div>
+      </section>
+
+      <!-- Add plan form (ถ้าหน้านี้ไม่ต้องเพิ่ม ลบส่วนนี้ได้) -->
+      <section class="card">
+        <h2 style="margin:0 0 10px">➕ เพิ่มแผนการอ่าน</h2>
+        <div class="grid-add">
+          <input type="text" id="bookTitle" placeholder="📖 ชื่อหนังสือ/บท/หัวข้อ..."/>
+          <input type="date" id="planDate"/>
+          <select id="priority"><option value="ปกติ">⭐ ปกติ</option><option value="สูง">🔥 สูง</option><option value="ด่วนมาก">🚨 ด่วนมาก</option></select>
+          <input type="text" id="subject" placeholder="🏷️ วิชา/หมวด (เช่น ฟิสิกส์, อังกฤษ)"/>
+          <button class="btn success" id="addPlanBtn" type="button">✅ บันทึก</button>
+          <textarea id="notes" rows="3" placeholder="📝 รายละเอียดเพิ่มเติม เช่น หน้าที่ 25–35, โจทย์บทที่ 2"></textarea>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="card"><div class="stat" id="stats"></div></section>
+
+      <!-- List -->
+      <section class="card">
+        <h2>📋 รายการแผนการอ่าน</h2>
+        <ul class="plan-list" id="planList"></ul>
+      </section>
+    </div>
+  </main>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    // ไปหน้าที่กดในเมนู
+    document.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.menu-btn[data-href]');
+      if(!btn) return;
+      location.href = btn.dataset.href;
+    });
+
+    // Theme toggle
+    (function(){
+      const THEME_KEY = "sb_theme";
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon   = document.getElementById("themeIcon");
+      const themeLabel  = document.getElementById("themeLabel");
+      const preferred = localStorage.getItem(THEME_KEY) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      const apply = t => {
+        document.documentElement.setAttribute("data-theme", t);
+        const isDark = t==="dark"; themeToggle?.setAttribute("aria-pressed", String(isDark));
+        if(themeIcon) themeIcon.textContent = isDark ? "🌙" : "🌞";
+        if(themeLabel) themeLabel.textContent = isDark ? "ธีมสว่าง" : "สลับธีม";
+      };
+      apply(preferred);
+      themeToggle?.addEventListener("click", ()=>{
+        const next = (document.documentElement.getAttribute("data-theme")==="light") ? "dark" : "light";
+        localStorage.setItem(THEME_KEY, next); apply(next);
+      });
+    })();
+
+    // เปิดโปรไฟล์
+    document.getElementById("sidebarProfile")?.addEventListener("click", (e)=>{
+      e.preventDefault();
+      location.href="user.html";
+    });
+
+    // เพิ่ม Logout ใน Sidebar (เก็บธีม sb_theme แล้วค่อยล้าง storage)
+    (function(){
+      const btn = document.getElementById("logoutBtn");
+      btn?.addEventListener("click", (e)=>{
+        e.preventDefault();
+        e.stopPropagation(); // กันเด้งไป user.html
+        try{
+          const theme = localStorage.getItem("sb_theme") || document.documentElement.getAttribute("data-theme");
+          localStorage.clear(); sessionStorage.clear();
+          if (theme) localStorage.setItem("sb_theme", theme);
+        }catch(e){}
+        location.href = "signin.html";
+      });
+    })();
+
+    // ย่อ/ขยาย Sidebar
+    document.getElementById("sidebarToggle")?.addEventListener("click", ()=>{ document.body.classList.toggle("sidebar-collapsed"); });
+
+    // ========= Auto-active (สำรองให้ถูกต้องแม้ลืมใส่ active ใน HTML) =========
+    (function markActive(){
+      const file = (location.pathname.split('/').pop() || 'dashboard.html').toLowerCase().split('#')[0].split('?')[0];
+      const alias = { 'reading-plan.html':'plan.html', 'plans.html':'plan.html', 'index.html':'dashboard.html' };
+      const current = alias[file] || file;
+      document.querySelectorAll('.menu-btn[data-href]').forEach(btn=>{
+        btn.classList.toggle('active', (btn.dataset.href||'').toLowerCase() === current);
+      });
+    })();
+
+    // ========= Demo logic: storage + render =========
+    const STORAGE_KEY="studyboard_reading_plans", META_KEY="studyboard_meta";
+    let plans=[]; try{plans=JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{}
+    let meta={streakDays:0,lastReadDate:null}; try{meta=Object.assign(meta,JSON.parse(localStorage.getItem(META_KEY))||{})}catch{}
+    const save=()=>localStorage.setItem(STORAGE_KEY,JSON.stringify(plans));
+    const saveMeta=()=>localStorage.setItem(META_KEY,JSON.stringify(meta));
+    const $=id=>document.getElementById(id);
+
+    const titleEl=$("bookTitle"), dateEl=$("planDate"), prioEl=$("priority"), subjEl=$("subject"), notesEl=$("notes");
+    const listEl=$("planList"), qEl=$("q"), fPriorityEl=$("fPriority"), fSubjectEl=$("fSubject"), sortEl=$("sortBy"), statsEl=$("stats");
+    const exportBtn=$("exportBtn"), importFile=$("importFile");
+
+    const formatDate = iso => { if(!iso) return ""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+    const escapeHtml = s => { const t=document.createElement("div"); t.innerText=s; return t.innerHTML; };
+    const prioRank = p => p==="ด่วนมาก"?3:p==="สูง"?2:1;
+    const todayISO = ()=>{ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`; };
+    const dayDiff=(a,b)=>Math.round((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/(24*3600*1000));
+
+    function renderStats(view){
+      const today=todayISO(), nowTs=Date.now(), weekMS=7*24*60*60*1000;
+      const todayCount=view.filter(p=>p.date===today).length;
+      const weekCount=view.filter(p=>p.date && nowTs>=Date.parse(p.date+"T00:00:00") && (nowTs-Date.parse(p.date+"T00:00:00"))<=weekMS).length;
+      const done=view.filter(p=>p.done).length;
+      statsEl.innerHTML=`
+        <span class="chip">📅 วันนี้: <b>${todayCount}</b> เรื่อง</span>
+        <span class="chip">🗓️ 7 วันล่าสุด: <b>${weekCount}</b> เรื่อง</span>
+        <span class="chip">✅ เสร็จแล้ว: <b>${done}</b> / ${view.length}</span>
+        <span class="chip">🔥 Streak: <b>${meta.streakDays}</b> วัน</span>
+      `;
+    }
+
+    function render(){
+      let view = plans.filter(p=>{
+        const q=(qEl?.value||"").toLowerCase();
+        const inText=!q || [p.title,p.subject,p.notes].some(v=>(v||"").toLowerCase().includes(q));
+        const prioOk=!fPriorityEl?.value || p.priority===fPriorityEl.value;
+        const subjOk=!fSubjectEl?.value || (p.subject||"").toLowerCase().includes(fSubjectEl.value.toLowerCase());
+        return inText && prioOk && subjOk;
+      });
+      const sort=sortEl?.value||"date-asc";
+      view.sort((a,b)=>{
+        if(sort==="date-asc")  return (a.date||"")>(b.date||"")?1:-1;
+        if(sort==="date-desc") return (a.date||"")<(b.date||"")?1:-1;
+        if(sort==="prio-desc") return prioRank(b.priority)-prioRank(a.priority);
+        if(sort==="title-asc") return (a.title||"").localeCompare((b.title||""),"th");
+        return 0;
+      });
+      renderStats(view);
+      listEl.innerHTML = view.length? "" : `<li class="empty">😴 ยังไม่มีรายการ</li>`;
+      view.forEach(p=>{
+        const idx=plans.indexOf(p);
+        const li=document.createElement("li"); li.className="plan-item"+(p.done?" done":"");
+        li.innerHTML=`
+          <div class="plan-info">
+            <div class="row1">
+              <span class="plan-title inline-edit" data-field="title" data-idx="${idx}">📖 ${escapeHtml(p.title)}</span>
+              ${p.date?`<span class="plan-date inline-edit" data-field="date" data-idx="${idx}">🗓️ ${formatDate(p.date)}</span>`:""}
+              <span class="tag prio-${escapeHtml(p.priority)} inline-edit" data-field="priority" data-idx="${idx}">⭐ ${escapeHtml(p.priority||"ปกติ")}</span>
+              ${p.subject?`<span class="tag inline-edit" data-field="subject" data-idx="${idx}">🏷️ ${escapeHtml(p.subject)}</span>`:`<span class="tag inline-edit" data-field="subject" data-idx="${idx}">🏷️ +วิชา</span>`}
+            </div>
+            ${p.notes?`<div class="row2 inline-edit" data-field="notes" data-idx="${idx}">📝 ${escapeHtml(p.notes)}</div>`:`<div class="row2 inline-edit" data-field="notes" data-idx="${idx}" style="color:var(--muted)">📝 เพิ่มโน้ต…</div>`}
+          </div>
+          <div class="plan-actions">
+            <button class="btn tiny" data-action="done" data-idx="${idx}">${p.done?"↩️ ยกเลิกเสร็จ":"✅ เสร็จแล้ว"}</button>
+            <button class="btn tiny" data-action="copy" data-idx="${idx}">🔁 ทำซ้ำ</button>
+            <button class="btn tiny danger" data-action="del" data-idx="${idx}">🗑️ ลบ</button>
+          </div>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+
+    // Add
+    document.getElementById("addPlanBtn")?.addEventListener("click",()=>{
+      const title=(titleEl?.value||"").trim(), date=(dateEl?.value||"").trim(),
+            priority=prioEl?.value||"ปกติ", subject=(subjEl?.value||"").trim(), notes=(notesEl?.value||"").trim();
+      if(!title){ alert("กรุณาใส่ชื่อหัวข้อ ✍️"); titleEl.focus(); return; }
+      if(!date){ alert("กรุณาเลือกวันที่ 📅"); dateEl.focus(); return; }
+      plans.push({title,date,priority,subject,notes,done:false,createdAt:Date.now()});
+      save(); if(titleEl){titleEl.value="";} if(dateEl){dateEl.value="";} if(prioEl){prioEl.value="ปกติ";} if(subjEl){subjEl.value="";} if(notesEl){notesEl.value="";}
+      render();
+    });
+
+    // List actions
+    listEl.addEventListener("click",e=>{
+      const btn=e.target.closest("button[data-action]"); if(!btn) return;
+      const idx=+btn.dataset.idx, act=btn.dataset.action;
+      if(act==="del"){ if(confirm("ลบรายการนี้?")){ plans.splice(idx,1); save(); render(); } return; }
+      if(act==="done"){ plans[idx].done=!plans[idx].done; save(); render(); return; }
+      if(act==="copy"){ const p=plans[idx]; plans.push({...p,done:false,createdAt:Date.now()}); save(); render(); return; }
+    });
+
+    // Inline edit
+    listEl.addEventListener("dblclick",e=>{
+      const el=e.target.closest(".inline-edit"); if(!el) return;
+      const idx=+el.dataset.idx, field=el.dataset.field, p=plans[idx]; let v=null;
+      if(field==="title"){ v=prompt("ชื่อเรื่อง/หัวข้อ:", p.title||""); if(v!==null) p.title=v.trim(); }
+      else if(field==="date"){ v=prompt("วันที่ (YYYY-MM-DD):", p.date||""); if(v!==null) p.date=v.trim(); }
+      else if(field==="priority"){ v=prompt("ความสำคัญ (ปกติ/สูง/ด่วนมาก):", p.priority||"ปกติ"); if(v!==null) p.priority=v.trim(); }
+      else if(field==="subject"){ v=prompt("วิชา/หมวด:", p.subject||""); if(v!==null) p.subject=v.trim(); }
+      else if(field==="notes"){ v=prompt("โน้ต:", p.notes||""); if(v!==null) p.notes=v.trim(); }
+      save(); render();
+    });
+
+    // Filters
+    $("clearFilters")?.addEventListener("click",()=>{ if(qEl) qEl.value=""; if(fPriorityEl) fPriorityEl.value=""; if(fSubjectEl) fSubjectEl.value=""; if(sortEl) sortEl.value="date-asc"; render(); });
+    qEl?.addEventListener("input",render); fPriorityEl?.addEventListener("change",render); fSubjectEl?.addEventListener("input",render); sortEl?.addEventListener("change",render);
+
+    // Export/Import
+    exportBtn?.addEventListener("click",()=>{
+      const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),plans,meta},null,2)],{type:"application/json"});
+      const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="reading-plans.json"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    importFile?.addEventListener("change",e=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      const r=new FileReader(); r.onload=()=>{
+        try{ const d=JSON.parse(r.result); if(!d||!Array.isArray(d.plans)) throw Error("ไฟล์ไม่ถูกต้อง");
+          plans=d.plans; meta=Object.assign({streakDays:0,lastReadDate:null}, d.meta||{}); save(); saveMeta(); render(); alert("นำเข้าเรียบร้อย 🎉");
+        }catch(err){ alert("นำเข้าไม่สำเร็จ: "+err.message); }
+        finally{ importFile.value=""; }
+      }; r.readAsText(f,"utf-8");
+    });
+
+    // First render
+    render();
+  </script>
+</body>
+</html>

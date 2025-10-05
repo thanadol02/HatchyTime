@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Account</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styledas.css') }}">
+</head>
+<body>
+  <!-- ฝังข้อมูลผู้ใช้จากฝั่งเซิร์ฟเวอร์ (ถ้ามี) -->
+  <script>
+    window.SERVER_USER = {
+      name: "{{ (current_user.name if current_user.is_authenticated) if current_user is defined else '' }}",
+      email: "{{ (current_user.email if current_user.is_authenticated) if current_user is defined else '' }}"
+    };
+  </script>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <main class="wrap">
+    <section class="panel">
+      <h1 class="title">บัญชีผู้ใช้</h1>
+      <p class="muted">ข้อมูลผู้ใช้ที่เข้าสู่ระบบ</p>
+
+      <div id="info" class="grid" style="margin-bottom:10px">
+        <div class="field">
+          <span class="label">ชื่อ</span>
+          <input class="input" id="name" type="text" placeholder="Your name" />
+        </div>
+        <div class="field">
+          <span class="label">อีเมล</span>
+          <input class="input" id="email" type="email" disabled />
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap:10px; margin:10px 0 18px;">
+        <button id="save" class="btn primary">บันทึกโปรไฟล์</button>
+        <a href="{{ url_for('dashboard') }}" class="btn" style="text-align:center;display:inline-block">กลับหน้าแรก</a>
+      </div>
+
+      <div class="grid" style="margin-top:8px">
+        <div class="field">
+          <span class="label">สถิติโดยสรุป</span>
+          <div class="muted" id="stats">กำลังโหลด…</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+        <a href="reset.html?email=" id="changePwd" class="btn-ghost">เปลี่ยนรหัสผ่าน</a>
+        <a href="#" id="logout" style="color:#d00;text-decoration:none">ออกจากระบบ</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const toast = document.getElementById("toast");
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(()=> toast.classList.remove("show"), 1600);
+    }
+
+    // เพิ่มตัวช่วยเรียก API (ลองหลายเส้นทาง)
+    const API_CANDIDATES = ["/api/me","/api/user","/user/me","/me"];
+    async function fetchJSON(url, opts={}){
+      const res = await fetch(url, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json", ...(opts.headers||{}) },
+        ...opts
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      return res.json();
+    }
+    async function loadUserFromApi(){
+      for (const url of API_CANDIDATES){
+        try{
+          const d = await fetchJSON(url);
+          if (d && (d.email || d.name)) return { name: d.name||"", email: d.email||"" };
+        }catch(_e){}
+      }
+      return null;
+    }
+    async function updateUserApi(payload){ // {name}
+      for (const url of API_CANDIDATES){
+        try{
+          const res = await fetch(url, {
+            method: "PATCH",
+            credentials: "same-origin",
+            headers: { "Content-Type":"application/json", Accept:"application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) return true;
+        }catch(_e){}
+      }
+      return false;
+    }
+
+    const nameEl = document.getElementById("name");
+    const emailEl = document.getElementById("email");
+    const statsEl = document.getElementById("stats");
+    const logoutEl = document.getElementById("logout");
+    const saveEl = document.getElementById("save");
+    const changePwd = document.getElementById("changePwd");
+
+    // แทนที่ด้วย init แบบ async: พยายามโหลดจาก DB ก่อน แล้วค่อย fallback
+    (async function initProfile(){
+      const currentLS = JSON.parse(localStorage.getItem("currentUser") || "null");
+      const serverUser = (typeof window.SERVER_USER === "object" && window.SERVER_USER && (window.SERVER_USER.email || window.SERVER_USER.name)) ? window.SERVER_USER : null;
+
+      // 1) จาก DB -> 2) localStorage -> 3) SERVER_USER
+      let current = await loadUserFromApi();
+      if (!current) current = currentLS || serverUser;
+
+      const isLoggedIn = !!(current && (current.email || current.name));
+
+      if (isLoggedIn) {
+        nameEl.value = current?.name || "";
+        emailEl.value = current?.email || "";
+        changePwd.href = "reset.html?email=" + encodeURIComponent(current?.email || "");
+        try {
+          localStorage.setItem("currentUser", JSON.stringify({
+            name: nameEl.value.trim(),
+            email: (emailEl.value || "").toLowerCase()
+          }));
+        } catch(e) {}
+      } else {
+        nameEl.value = "";
+        emailEl.value = "";
+        saveEl.setAttribute("disabled","true");
+        changePwd.style.display = "none";
+        document.querySelector(".muted")?.insertAdjacentText("beforeend"," — โปรดเข้าสู่ระบบก่อน");
+      }
+
+      // สถิติแบบง่ายจาก sessions (เหมือนเดิม)
+      try{
+        const sessions = JSON.parse(localStorage.getItem("mf_sessions") || "[]");
+        const totalMin = sessions.reduce((a,b)=> a + (b?.minutes||0), 0);
+        const h = Math.floor(totalMin/60), m = totalMin%60;
+        statsEl.textContent = `โฟกัสรวมทั้งหมด: ${h} ชั่วโมง ${m} นาที (${sessions.length} รอบ)`;
+      }catch(e){
+        statsEl.textContent = "ไม่มีข้อมูลสถิติ";
+      }
+
+      // บันทึกโปรไฟล์: ลองอัปเดตผ่าน API ก่อน ถ้าไม่สำเร็จ ค่อยเก็บใน localStorage
+      saveEl.addEventListener("click", async ()=>{
+        if (!isLoggedIn) { showToast("กรุณาเข้าสู่ระบบก่อน"); return; }
+        const name = nameEl.value.trim();
+        const email = (emailEl.value || current?.email || "").toLowerCase();
+
+        let ok = false;
+        try { ok = await updateUserApi({ name }); } catch(_e){}
+        if (!ok){
+          try{
+            const users = JSON.parse(localStorage.getItem("users") || "[]");
+            const idx = users.findIndex(u => (u.email||"").toLowerCase() === email);
+            if(idx !== -1){ users[idx].name = name; localStorage.setItem("users", JSON.stringify(users)); }
+          }catch(_e){}
+        }
+        try{ localStorage.setItem("currentUser", JSON.stringify({ name, email })); }catch(_e){}
+        showToast(ok ? "✅ บันทึกโปรไฟล์ (ฐานข้อมูล)" : "✅ บันทึกโปรไฟล์ (ออฟไลน์)");
+      });
+    })();
+
+    // ออกจากระบบ (เหมือนเดิม)
+    logoutEl.addEventListener("click", (e)=>{
+      e.preventDefault();
+      localStorage.removeItem("currentUser");
+      window.location.href = "signin.html";
+    });
+  </script>
+</body>
+</html>
